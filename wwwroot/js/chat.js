@@ -112,37 +112,31 @@ async function initializeSignalR() {
 
   // Handle incoming messages
   connection.on("ReceiveMessage", (message) => {
-    console.log("Message received:", message);
     handleIncomingMessage(message);
   });
 
   // Handle private messages with media
   connection.on("ReceivePrivateMessage", (message) => {
-    console.log("Private message received:", message);
     handleIncomingMessage(message);
   });
 
   // Handle message sent confirmation
   connection.on("MessageSent", (message) => {
-    console.log("Message sent confirmation:", message);
     handleIncomingMessage(message);
   });
 
   // Handle user online status
   connection.on("UserOnline", (userId) => {
-    console.log("User online:", userId);
     updateUserOnlineStatus(userId, true);
   });
 
   // Handle user offline status
   connection.on("UserOffline", (userId) => {
-    console.log("User offline:", userId);
     updateUserOnlineStatus(userId, false);
   });
 
   // Handle message read receipt
   connection.on("MessageRead", (messageId) => {
-    console.log("Message read:", messageId);
     updateMessageReadStatus(messageId);
   });
 
@@ -155,15 +149,12 @@ async function initializeSignalR() {
 
   try {
     await connection.start();
-    console.log("SignalR Connected");
   } catch (error) {
-    console.error("SignalR Connection Error:", error);
     setTimeout(initializeSignalR, 5000);
   }
 
   // Handle reconnection
   connection.onreconnected(() => {
-    console.log("SignalR Reconnected");
     loadConversations();
   });
 }
@@ -177,11 +168,9 @@ async function loadAllUsers() {
     allUsers = response;
     displayAllUsers(allUsers);
   } catch (error) {
-    console.error("Error loading users:", error);
     showError("Failed to load users");
   }
 }
-
 /**
  * Load conversations from the API
  */
@@ -191,7 +180,7 @@ async function loadConversations() {
     conversations = response;
     displayConversations(conversations);
   } catch (error) {
-    console.error("Error loading conversations:", error);
+    // Silent fail
   }
 }
 
@@ -359,7 +348,6 @@ async function loadMessages(otherUserId) {
     // Scroll to bottom after loading
     scrollToBottom();
   } catch (error) {
-    console.error("Error loading messages:", error);
     document.getElementById("messagesArea").innerHTML = `
             <div class="text-center text-gray-500">
                 <p>Error loading messages</p>
@@ -589,12 +577,16 @@ async function sendMessage() {
       );
       cancelReply(); // Clear reply state
     } else {
-      await connection.invoke("SendPrivateMessage", currentChatUserId, content);
+      await connection.invoke(
+        "SendPrivateMessage",
+        currentChatUserId,
+        content,
+        null, // No reply message
+      );
     }
 
     // Message will be updated via SignalR callback with real ID
   } catch (error) {
-    console.error("Error sending message:", error);
     showError("Failed to send message");
     // Remove the temporary message on error
     if (messages[currentChatUserId]) {
@@ -609,8 +601,6 @@ async function sendMessage() {
  * Handle incoming message from SignalR
  */
 function handleIncomingMessage(message) {
-  console.log("Received message from SignalR:", message);
-
   // Update or create conversation
   updateConversationWithMessage(message);
 
@@ -701,7 +691,6 @@ async function markMessagesAsRead(otherUserId) {
       `/api/chat/conversation/${otherUserId}/read`,
       "POST",
     );
-    console.log(`Marked ${result.markedCount} messages as read`);
 
     // Update local unread count
     const conversation = conversations.find(
@@ -714,7 +703,7 @@ async function markMessagesAsRead(otherUserId) {
     // Refresh the conversation list to reflect changes
     displayConversations(conversations);
   } catch (error) {
-    console.error("Error marking messages as read:", error);
+    // Silent fail
   }
 }
 
@@ -725,7 +714,7 @@ async function markMessageAsRead(messageId) {
   try {
     await connection.invoke("MarkMessageAsRead", messageId);
   } catch (error) {
-    console.error("Error marking message as read:", error);
+    // Silent fail
   }
 }
 
@@ -976,9 +965,7 @@ function scrollToBottom() {
  * Show error message
  */
 function showError(message) {
-  // Simple console error for now
   // You could implement a toast notification system here
-  console.error(message);
   alert(message);
 }
 
@@ -1024,6 +1011,7 @@ async function handleFileUpload(event) {
 
     // Upload file
     const token = localStorage.getItem("token");
+
     const response = await fetch("/api/media/upload", {
       method: "POST",
       headers: {
@@ -1033,7 +1021,8 @@ async function handleFileUpload(event) {
     });
 
     if (!response.ok) {
-      throw new Error("Upload failed");
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
@@ -1042,14 +1031,15 @@ async function handleFileUpload(event) {
       // Send message with media
       const mediaMessage = `[${mediaType === 0 ? "Image" : "Video"}] ${result.media.fileName}`;
       await sendMessageWithMedia(mediaMessage, result.media);
+    } else {
+      throw new Error(result.message || "Upload failed");
     }
 
     // Reset input
     messageInput.placeholder = originalPlaceholder;
     messageInput.disabled = false;
   } catch (error) {
-    console.error("Error uploading file:", error);
-    showError("Failed to upload file");
+    showError(`Failed to upload file: ${error.message}`);
     const messageInput = document.getElementById("messageInput");
     messageInput.placeholder = "Type a message";
     messageInput.disabled = false;
@@ -1097,6 +1087,7 @@ async function sendMessageWithMedia(content, media) {
         currentChatUserId,
         content,
         [media.id],
+        null, // No reply message
       );
     }
 
@@ -1105,8 +1096,7 @@ async function sendMessageWithMedia(content, media) {
       await loadMessages(currentChatUserId);
     }, 500);
   } catch (error) {
-    console.error("Error sending message with media:", error);
-    showError("Failed to send message");
+    showError(`Failed to send message: ${error.message}`);
     // Remove the temporary message on error
     if (messages[currentChatUserId]) {
       messages[currentChatUserId].pop();

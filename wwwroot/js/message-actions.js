@@ -67,6 +67,11 @@ function setReplyTo(messageId, content, senderId) {
 
   // Show reply bar
   const replyBar = document.getElementById("replyBar") || createReplyBar();
+
+  if (!replyBar) {
+    return;
+  }
+
   const senderName =
     messages[currentChatUserId]?.find((m) => m.id === messageId)?.senderName ||
     "User";
@@ -94,7 +99,15 @@ function cancelReply() {
  * Create reply bar element
  */
 function createReplyBar() {
-  const messageArea = document.querySelector(".bg-wa-gray-dark.px-4.py-3");
+  const messageInputContainer = document.getElementById(
+    "messageInputContainer",
+  );
+  const messageInputArea = document.getElementById("messageInputArea");
+
+  if (!messageInputContainer || !messageInputArea) {
+    return null;
+  }
+
   const replyBar = document.createElement("div");
   replyBar.id = "replyBar";
   replyBar.className =
@@ -108,7 +121,7 @@ function createReplyBar() {
             <i class="fas fa-times"></i>
         </button>
     `;
-  messageArea.parentNode.insertBefore(replyBar, messageArea);
+  messageInputContainer.insertBefore(replyBar, messageInputArea);
   return replyBar;
 }
 
@@ -134,7 +147,6 @@ async function deleteMessage(messageId) {
       showError("Failed to delete message");
     }
   } catch (error) {
-    console.error("Error deleting message:", error);
     showError("Failed to delete message");
   }
 }
