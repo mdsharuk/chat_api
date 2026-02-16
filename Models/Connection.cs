@@ -12,7 +12,7 @@ public class Connection
     public string ConnectionId { get; set; } = string.Empty;
     
     [Required]
-    public string UserId { get; set; } = string.Empty;
+    public int UserId { get; set; }
     
     public DateTime ConnectedAt { get; set; } = DateTime.UtcNow;
     

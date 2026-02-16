@@ -25,8 +25,8 @@ public class NotificationController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool unreadOnly = false)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
             return Unauthorized();
 
         try
@@ -81,8 +81,8 @@ public class NotificationController : ControllerBase
     [HttpPost("{id}/read")]
     public async Task<IActionResult> MarkAsRead(int id)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
             return Unauthorized();
 
         try
@@ -112,8 +112,8 @@ public class NotificationController : ControllerBase
     [HttpPost("read-all")]
     public async Task<IActionResult> MarkAllAsRead()
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
             return Unauthorized();
 
         try
@@ -143,8 +143,8 @@ public class NotificationController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteNotification(int id)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
             return Unauthorized();
 
         try
@@ -170,8 +170,8 @@ public class NotificationController : ControllerBase
     [HttpGet("unread-count")]
     public async Task<IActionResult> GetUnreadCount()
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
             return Unauthorized();
 
         try

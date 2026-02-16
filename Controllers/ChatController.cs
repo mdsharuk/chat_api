@@ -23,7 +23,8 @@ public class ChatController : ControllerBase
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsers()
     {
-        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var currentUserIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserIdValue == null || !int.TryParse(currentUserIdValue, out var currentUserId)) return Unauthorized();
         
         var users = await _context.Users
             .Where(u => u.Id != currentUserId)
@@ -45,8 +46,8 @@ public class ChatController : ControllerBase
     [HttpGet("conversations")]
     public async Task<IActionResult> GetConversations()
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         var conversations = await _context.Conversations
             .Where(c => c.User1Id == userId || c.User2Id == userId)
@@ -72,10 +73,10 @@ public class ChatController : ControllerBase
     }
 
     [HttpGet("conversation/{otherUserId}")]
-    public async Task<IActionResult> GetConversationMessages(string otherUserId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    public async Task<IActionResult> GetConversationMessages(int otherUserId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         var conversation = await _context.Conversations
             .FirstOrDefaultAsync(c =>
@@ -130,8 +131,8 @@ public class ChatController : ControllerBase
     [HttpPost("mark-read/{messageId}")]
     public async Task<IActionResult> MarkAsRead(int messageId)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         var message = await _context.Messages
             .Include(m => m.Conversation)
@@ -161,7 +162,8 @@ public class ChatController : ControllerBase
     [HttpGet("search")]
     public async Task<IActionResult> SearchUsers([FromQuery] string query)
     {
-        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var currentUserIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserIdValue == null || !int.TryParse(currentUserIdValue, out var currentUserId)) return Unauthorized();
         
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -186,5 +188,108 @@ public class ChatController : ControllerBase
             .ToListAsync();
 
         return Ok(users);
+    }
+
+    [HttpPost("search-messages")]
+    public async Task<IActionResult> SearchMessages([FromBody] SearchMessageDto searchDto)
+    {
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
+
+        // Build base query
+        var query = _context.Messages
+            .Include(m => m.Sender)
+            .Include(m => m.Conversation)
+            .Include(m => m.Group)
+            .Include(m => m.MessageMedia)
+                .ThenInclude(mm => mm.Media)
+                    .ThenInclude(media => media.Uploader)
+            .AsQueryable();
+
+        // Filter by user access (only messages from conversations/groups user is part of)
+        query = query.Where(m => 
+            (m.ConversationId != null && 
+             (m.Conversation!.User1Id == userId || m.Conversation!.User2Id == userId)) ||
+            (m.GroupId != null && 
+             m.Group!.Members.Any(gm => gm.UserId == userId)));
+
+        // Apply search filters
+        if (!string.IsNullOrWhiteSpace(searchDto.SearchTerm))
+        {
+            query = query.Where(m => m.Content.Contains(searchDto.SearchTerm));
+        }
+
+        if (searchDto.ConversationId.HasValue)
+        {
+            query = query.Where(m => m.ConversationId == searchDto.ConversationId.Value);
+        }
+
+        if (searchDto.GroupId.HasValue)
+        {
+            query = query.Where(m => m.GroupId == searchDto.GroupId.Value);
+        }
+
+        if (searchDto.SenderId.HasValue)
+        {
+            query = query.Where(m => m.SenderId == searchDto.SenderId.Value);
+        }
+
+        if (searchDto.FromDate.HasValue)
+        {
+            query = query.Where(m => m.SentAt >= searchDto.FromDate.Value);
+        }
+
+        if (searchDto.ToDate.HasValue)
+        {
+            query = query.Where(m => m.SentAt <= searchDto.ToDate.Value);
+        }
+
+        // Get total count
+        var totalCount = await query.CountAsync();
+
+        // Apply pagination and ordering
+        var messages = await query
+            .OrderByDescending(m => m.SentAt)
+            .Skip((searchDto.Page - 1) * searchDto.PageSize)
+            .Take(searchDto.PageSize)
+            .Select(m => new MessageDto
+            {
+                Id = m.Id,
+                Content = m.Content,
+                SenderId = m.SenderId,
+                SenderName = m.Sender.UserName ?? string.Empty,
+                SentAt = m.SentAt,
+                IsRead = m.IsRead,
+                ConversationId = m.ConversationId,
+                GroupId = m.GroupId,
+                MessageType = m.MessageType,
+                Media = m.MessageMedia.Select(mm => new MediaDto
+                {
+                    Id = mm.Media.Id,
+                    FileName = mm.Media.FileName,
+                    FilePath = mm.Media.FilePath,
+                    ContentType = mm.Media.ContentType,
+                    FileSize = mm.Media.FileSize,
+                    MediaType = mm.Media.MediaType,
+                    ThumbnailPath = mm.Media.ThumbnailPath,
+                    UploadedAt = mm.Media.UploadedAt,
+                    UploadedBy = mm.Media.UploadedBy,
+                    UploaderName = mm.Media.Uploader.UserName ?? "Unknown"
+                }).ToList()
+            })
+            .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)searchDto.PageSize);
+
+        var result = new SearchMessageResultDto
+        {
+            Messages = messages,
+            TotalCount = totalCount,
+            Page = searchDto.Page,
+            PageSize = searchDto.PageSize,
+            TotalPages = totalPages
+        };
+
+        return Ok(result);
     }
 }

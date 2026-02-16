@@ -24,8 +24,8 @@ public class GroupController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUserGroups()
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         var groups = await _context.GroupMembers
             .Where(gm => gm.UserId == userId)
@@ -51,8 +51,8 @@ public class GroupController : ControllerBase
     [HttpGet("{groupId}")]
     public async Task<IActionResult> GetGroup(int groupId)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         // Verify user is member
         var isMember = await _context.GroupMembers
@@ -90,8 +90,8 @@ public class GroupController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateGroup([FromBody] CreateGroupDto model)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         var group = new Group
         {
@@ -137,8 +137,8 @@ public class GroupController : ControllerBase
     [HttpGet("{groupId}/members")]
     public async Task<IActionResult> GetGroupMembers(int groupId)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         // Verify user is member
         var isMember = await _context.GroupMembers
@@ -169,8 +169,8 @@ public class GroupController : ControllerBase
     [HttpGet("{groupId}/messages")]
     public async Task<IActionResult> GetGroupMessages(int groupId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         // Verify user is member
         var isMember = await _context.GroupMembers
@@ -204,10 +204,10 @@ public class GroupController : ControllerBase
     }
 
     [HttpPost("{groupId}/members")]
-    public async Task<IActionResult> AddMember(int groupId, [FromBody] string newMemberId)
+    public async Task<IActionResult> AddMember(int groupId, [FromBody] int newMemberId)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         // Verify user is admin of group
         var isAdmin = await _context.GroupMembers
@@ -242,10 +242,10 @@ public class GroupController : ControllerBase
     }
 
     [HttpDelete("{groupId}/members/{memberId}")]
-    public async Task<IActionResult> RemoveMember(int groupId, string memberId)
+    public async Task<IActionResult> RemoveMember(int groupId, int memberId)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         // Verify user is admin of group
         var isAdmin = await _context.GroupMembers
@@ -273,8 +273,8 @@ public class GroupController : ControllerBase
     [HttpDelete("{groupId}")]
     public async Task<IActionResult> DeleteGroup(int groupId)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
 
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null)

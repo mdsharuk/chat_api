@@ -22,8 +22,8 @@ public class ChatHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.UserIdentifier;
-        if (userId != null)
+        var userIdValue = Context.UserIdentifier;
+        if (userIdValue != null && int.TryParse(userIdValue, out var userId))
         {
             // Track connection
             var connection = new Connection
@@ -55,8 +55,8 @@ public class ChatHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var userId = Context.UserIdentifier;
-        if (userId != null)
+        var userIdValue = Context.UserIdentifier;
+        if (userIdValue != null && int.TryParse(userIdValue, out var userId))
         {
             // Remove connection
             var connection = await _context.Connections
@@ -93,10 +93,10 @@ public class ChatHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    public async Task SendPrivateMessage(string receiverId, string content)
+    public async Task SendPrivateMessage(int receiverId, string content)
     {
-        var senderId = Context.UserIdentifier;
-        if (senderId == null) return;
+        var senderIdValue = Context.UserIdentifier;
+        if (senderIdValue == null || !int.TryParse(senderIdValue, out var senderId)) return;
 
         try
         {
@@ -150,7 +150,7 @@ public class ChatHub : Hub
             };
 
             // Send to receiver
-            await Clients.User(receiverId).SendAsync("ReceivePrivateMessage", messageDto);
+            await Clients.User(receiverId.ToString()).SendAsync("ReceivePrivateMessage", messageDto);
 
             // Send confirmation to sender
             await Clients.Caller.SendAsync("MessageSent", messageDto);
@@ -166,8 +166,8 @@ public class ChatHub : Hub
 
     public async Task SendGroupMessage(int groupId, string content)
     {
-        var senderId = Context.UserIdentifier;
-        if (senderId == null) return;
+        var senderIdValue = Context.UserIdentifier;
+        if (senderIdValue == null || !int.TryParse(senderIdValue, out var senderId)) return;
 
         try
         {
@@ -212,7 +212,7 @@ public class ChatHub : Hub
             // Get all group members
             var memberIds = await _context.GroupMembers
                 .Where(gm => gm.GroupId == groupId)
-                .Select(gm => gm.UserId)
+                .Select(gm => gm.UserId.ToString())
                 .ToListAsync();
 
             // Send to all group members
@@ -229,8 +229,8 @@ public class ChatHub : Hub
 
     public async Task MarkMessageAsRead(int messageId)
     {
-        var userId = Context.UserIdentifier;
-        if (userId == null) return;
+        var userIdValue = Context.UserIdentifier;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return;
 
         try
         {
@@ -250,7 +250,7 @@ public class ChatHub : Hub
                         await _context.SaveChangesAsync();
 
                         // Notify sender
-                        await Clients.User(message.SenderId).SendAsync("MessageRead", messageId);
+                        await Clients.User(message.SenderId.ToString()).SendAsync("MessageRead", messageId);
                     }
                 }
             }
@@ -273,23 +273,23 @@ public class ChatHub : Hub
         _logger.LogInformation($"User left group {groupId}");
     }
 
-    public async Task Typing(string receiverId)
+    public async Task Typing(int receiverId)
     {
         var senderId = Context.UserIdentifier;
-        await Clients.User(receiverId).SendAsync("UserTyping", senderId);
+        await Clients.User(receiverId.ToString()).SendAsync("UserTyping", senderId);
     }
 
-    public async Task StopTyping(string receiverId)
+    public async Task StopTyping(int receiverId)
     {
         var senderId = Context.UserIdentifier;
-        await Clients.User(receiverId).SendAsync("UserStoppedTyping", senderId);
+        await Clients.User(receiverId.ToString()).SendAsync("UserStoppedTyping", senderId);
     }
 
     // Enhanced message sending with media support
-    public async Task SendPrivateMessageWithMedia(string receiverId, string content, List<int> mediaIds)
+    public async Task SendPrivateMessageWithMedia(int receiverId, string content, List<int> mediaIds)
     {
-        var senderId = Context.UserIdentifier;
-        if (senderId == null) return;
+        var senderIdValue = Context.UserIdentifier;
+        if (senderIdValue == null || !int.TryParse(senderIdValue, out var senderId)) return;
 
         try
         {
@@ -381,7 +381,7 @@ public class ChatHub : Hub
             };
 
             // Send to receiver
-            await Clients.User(receiverId).SendAsync("ReceivePrivateMessage", messageDto);
+            await Clients.User(receiverId.ToString()).SendAsync("ReceivePrivateMessage", messageDto);
 
             // Send confirmation to sender
             await Clients.Caller.SendAsync("MessageSent", messageDto);
@@ -402,8 +402,8 @@ public class ChatHub : Hub
 
     public async Task SendGroupMessageWithMedia(int groupId, string content, List<int> mediaIds)
     {
-        var senderId = Context.UserIdentifier;
-        if (senderId == null) return;
+        var senderIdValue = Context.UserIdentifier;
+        if (senderIdValue == null || !int.TryParse(senderIdValue, out var senderId)) return;
 
         try
         {
@@ -506,12 +506,12 @@ public class ChatHub : Hub
     }
 
     // Notification methods
-    public async Task SendNotification(string userId, NotificationDto notification)
+    public async Task SendNotification(int userId, NotificationDto notification)
     {
-        await Clients.User(userId).SendAsync("ReceiveNotification", notification);
+        await Clients.User(userId.ToString()).SendAsync("ReceiveNotification", notification);
     }
 
-    private async Task CreateNotification(string userId, string? fromUserId, string title, string? message, 
+    private async Task CreateNotification(int userId, int? fromUserId, string title, string? message, 
         NotificationType type, string? relatedEntityId = null)
     {
         try
@@ -552,7 +552,7 @@ public class ChatHub : Hub
             };
 
             // Send real-time notification
-            await Clients.User(userId).SendAsync("ReceiveNotification", notificationDto);
+            await Clients.User(userId.ToString()).SendAsync("ReceiveNotification", notificationDto);
         }
         catch (Exception ex)
         {

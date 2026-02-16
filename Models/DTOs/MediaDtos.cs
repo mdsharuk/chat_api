@@ -10,7 +10,7 @@ public class MediaDto
     public MediaType MediaType { get; set; }
     public string? ThumbnailPath { get; set; }
     public DateTime UploadedAt { get; set; }
-    public string UploadedBy { get; set; } = string.Empty;
+    public int UploadedBy { get; set; }
     public string UploaderName { get; set; } = string.Empty;
 }
 

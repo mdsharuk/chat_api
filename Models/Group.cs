@@ -15,7 +15,7 @@ public class Group
     public string? Description { get; set; }
     
     [Required]
-    public string CreatedById { get; set; } = string.Empty;
+    public int CreatedById { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     

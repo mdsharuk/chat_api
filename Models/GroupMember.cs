@@ -12,7 +12,7 @@ public class GroupMember
     public int GroupId { get; set; }
     
     [Required]
-    public string UserId { get; set; } = string.Empty;
+    public int UserId { get; set; }
     
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
     

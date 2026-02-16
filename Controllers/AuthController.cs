@@ -114,13 +114,13 @@ public class AuthController : ControllerBase
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile()
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
         {
             return Unauthorized();
         }
 
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
             return NotFound();
@@ -146,13 +146,13 @@ public class AuthController : ControllerBase
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto model)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
         {
             return Unauthorized();
         }
 
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
             return NotFound();

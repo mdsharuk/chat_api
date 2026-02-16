@@ -32,8 +32,8 @@ public class MediaController : ControllerBase
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdValue == null || !int.TryParse(userIdValue, out var userId))
                 return Unauthorized();
 
             if (uploadDto.File == null || uploadDto.File.Length == 0)
@@ -149,7 +149,8 @@ public class MediaController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteMedia(int id)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
         var media = await _context.Media.FindAsync(id);
 
         if (media == null)

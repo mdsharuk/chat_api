@@ -10,7 +10,7 @@ public class NotificationDto
     public DateTime CreatedAt { get; set; }
     public string? RelatedEntityId { get; set; }
     public string? ImageUrl { get; set; }
-    public string? FromUserId { get; set; }
+    public int? FromUserId { get; set; }
     public string? FromUserName { get; set; }
 }
 
@@ -21,7 +21,7 @@ public class CreateNotificationDto
     public NotificationType Type { get; set; }
     public string? RelatedEntityId { get; set; }
     public string? ImageUrl { get; set; }
-    public string? FromUserId { get; set; }
+    public int? FromUserId { get; set; }
 }
 
 public class MarkNotificationReadDto

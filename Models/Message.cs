@@ -19,7 +19,7 @@ public class Message
     
     // Foreign keys
     [Required]
-    public string SenderId { get; set; } = string.Empty;
+    public int SenderId { get; set; }
     
     public int? ConversationId { get; set; }
     

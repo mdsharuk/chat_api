@@ -29,9 +29,9 @@ public class Notification
     
     // Foreign keys
     [Required]
-    public string UserId { get; set; } = string.Empty;
+    public int UserId { get; set; }
     
-    public string? FromUserId { get; set; }
+    public int? FromUserId { get; set; }
     
     // Navigation properties
     [ForeignKey("UserId")]

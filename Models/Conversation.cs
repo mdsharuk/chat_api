@@ -8,10 +8,10 @@ public class Conversation
     public int Id { get; set; }
     
     [Required]
-    public string User1Id { get; set; } = string.Empty;
+    public int User1Id { get; set; }
     
     [Required]
-    public string User2Id { get; set; } = string.Empty;
+    public int User2Id { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     

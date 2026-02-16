@@ -28,7 +28,7 @@ public class Media
     
     // Foreign key
     [Required]
-    public string UploadedBy { get; set; } = string.Empty;
+    public int UploadedBy { get; set; }
     
     // Navigation properties
     [ForeignKey("UploadedBy")]
