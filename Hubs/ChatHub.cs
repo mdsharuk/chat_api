@@ -93,7 +93,7 @@ public class ChatHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    public async Task SendPrivateMessage(int receiverId, string content)
+    public async Task SendPrivateMessage(int receiverId, string content, int? replyToMessageId = null)
     {
         var senderIdValue = Context.UserIdentifier;
         if (senderIdValue == null || !int.TryParse(senderIdValue, out var senderId)) return;
@@ -126,7 +126,8 @@ public class ChatHub : Hub
                 ConversationId = conversation.Id,
                 SentAt = DateTime.UtcNow,
                 IsRead = false,
-                MessageType = MessageType.Text
+                MessageType = MessageType.Text,
+                ReplyToMessageId = replyToMessageId
             };
 
             _context.Messages.Add(message);
@@ -136,6 +137,26 @@ public class ChatHub : Hub
             // Get sender info
             var sender = await _context.Users.FindAsync(senderId);
 
+            // Get reply message if exists
+            ReplyMessageDto? replyDto = null;
+            if (replyToMessageId.HasValue)
+            {
+                var replyMessage = await _context.Messages
+                    .Include(m => m.Sender)
+                    .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value);
+                
+                if (replyMessage != null)
+                {
+                    replyDto = new ReplyMessageDto
+                    {
+                        Id = replyMessage.Id,
+                        Content = replyMessage.Content,
+                        SenderId = replyMessage.SenderId,
+                        SenderName = replyMessage.Sender.UserName ?? "Unknown"
+                    };
+                }
+            }
+
             var messageDto = new MessageDto
             {
                 Id = message.Id,
@@ -144,9 +165,12 @@ public class ChatHub : Hub
                 SenderName = sender?.UserName ?? "Unknown",
                 SentAt = message.SentAt,
                 IsRead = message.IsRead,
+                IsDeleted = message.IsDeleted,
                 ConversationId = conversation.Id,
                 MessageType = message.MessageType,
-                Media = new List<MediaDto>()
+                Media = new List<MediaDto>(),
+                ReplyToMessageId = replyToMessageId,
+                ReplyToMessage = replyDto
             };
 
             // Send to receiver
@@ -286,7 +310,7 @@ public class ChatHub : Hub
     }
 
     // Enhanced message sending with media support
-    public async Task SendPrivateMessageWithMedia(int receiverId, string content, List<int> mediaIds)
+    public async Task SendPrivateMessageWithMedia(int receiverId, string content, List<int> mediaIds, int? replyToMessageId = null)
     {
         var senderIdValue = Context.UserIdentifier;
         if (senderIdValue == null || !int.TryParse(senderIdValue, out var senderId)) return;
@@ -319,7 +343,8 @@ public class ChatHub : Hub
                 ConversationId = conversation.Id,
                 SentAt = DateTime.UtcNow,
                 IsRead = false,
-                MessageType = mediaIds.Any() ? MessageType.Media : MessageType.Text
+                MessageType = mediaIds.Any() ? MessageType.Media : MessageType.Text,
+                ReplyToMessageId = replyToMessageId
             };
 
             _context.Messages.Add(message);
@@ -367,6 +392,26 @@ public class ChatHub : Hub
             // Get sender info
             var sender = await _context.Users.FindAsync(senderId);
 
+            // Get reply message if exists
+            ReplyMessageDto? replyDto = null;
+            if (replyToMessageId.HasValue)
+            {
+                var replyMessage = await _context.Messages
+                    .Include(m => m.Sender)
+                    .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value);
+                
+                if (replyMessage != null)
+                {
+                    replyDto = new ReplyMessageDto
+                    {
+                        Id = replyMessage.Id,
+                        Content = replyMessage.Content,
+                        SenderId = replyMessage.SenderId,
+                        SenderName = replyMessage.Sender.UserName ?? "Unknown"
+                    };
+                }
+            }
+
             var messageDto = new MessageDto
             {
                 Id = message.Id,
@@ -375,9 +420,12 @@ public class ChatHub : Hub
                 SenderName = sender?.UserName ?? "Unknown",
                 SentAt = message.SentAt,
                 IsRead = message.IsRead,
+                IsDeleted = message.IsDeleted,
                 ConversationId = conversation.Id,
                 MessageType = message.MessageType,
-                Media = mediaList
+                Media = mediaList,
+                ReplyToMessageId = replyToMessageId,
+                ReplyToMessage = replyDto
             };
 
             // Send to receiver

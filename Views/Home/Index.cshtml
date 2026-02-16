@@ -1,0 +1,9 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+@* This page redirects based on authentication status *@
+<script>
+    // Redirect handled by controller
+    window.location.href = '@Url.Action("Index", "Home")';
+</script>

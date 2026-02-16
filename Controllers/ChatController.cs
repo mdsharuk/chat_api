@@ -91,6 +91,8 @@ public class ChatController : ControllerBase
         var messages = await _context.Messages
             .Where(m => m.ConversationId == conversation.Id)
             .Include(m => m.Sender)
+            .Include(m => m.ReplyToMessage)
+                .ThenInclude(rm => rm.Sender)
             .Include(m => m.MessageMedia)
                 .ThenInclude(mm => mm.Media)
                     .ThenInclude(media => media.Uploader)
@@ -105,8 +107,17 @@ public class ChatController : ControllerBase
                 SenderName = m.Sender.UserName ?? string.Empty,
                 SentAt = m.SentAt,
                 IsRead = m.IsRead,
+                IsDeleted = m.IsDeleted,
                 ConversationId = m.ConversationId,
                 MessageType = m.MessageType,
+                ReplyToMessageId = m.ReplyToMessageId,
+                ReplyToMessage = m.ReplyToMessage != null ? new ReplyMessageDto
+                {
+                    Id = m.ReplyToMessage.Id,
+                    Content = m.ReplyToMessage.Content,
+                    SenderId = m.ReplyToMessage.SenderId,
+                    SenderName = m.ReplyToMessage.Sender.UserName ?? "Unknown"
+                } : null,
                 Media = m.MessageMedia.Select(mm => new MediaDto
                 {
                     Id = mm.Media.Id,
@@ -157,6 +168,44 @@ public class ChatController : ControllerBase
         }
 
         return Ok();
+    }
+
+    [HttpPost("conversation/{otherUserId}/read")]
+    public async Task<IActionResult> MarkConversationAsRead(int otherUserId)
+    {
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
+
+        var conversation = await _context.Conversations
+            .FirstOrDefaultAsync(c =>
+                (c.User1Id == userId && c.User2Id == otherUserId) ||
+                (c.User1Id == otherUserId && c.User2Id == userId));
+
+        if (conversation == null)
+        {
+            return Ok(new { message = "No conversation found" });
+        }
+
+        // Mark all unread messages from the other user as read
+        var unreadMessages = await _context.Messages
+            .Where(m => m.ConversationId == conversation.Id &&
+                       m.SenderId == otherUserId &&
+                       m.SenderId != userId &&
+                       !m.IsRead)
+            .ToListAsync();
+
+        foreach (var message in unreadMessages)
+        {
+            message.IsRead = true;
+            message.ReadAt = DateTime.UtcNow;
+        }
+
+        if (unreadMessages.Any())
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new { markedCount = unreadMessages.Count });
     }
 
     [HttpGet("search")]
@@ -291,5 +340,32 @@ public class ChatController : ControllerBase
         };
 
         return Ok(result);
+    }
+
+    [HttpDelete("message/{messageId}")]
+    public async Task<IActionResult> DeleteMessage(int messageId)
+    {
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdValue == null || !int.TryParse(userIdValue, out var userId)) return Unauthorized();
+
+        var message = await _context.Messages
+            .FirstOrDefaultAsync(m => m.Id == messageId);
+
+        if (message == null) return NotFound();
+
+        // Verify user is the sender
+        if (message.SenderId != userId)
+        {
+           return Forbid();
+        }
+
+        // Mark as deleted (soft delete)
+        message.IsDeleted = true;
+        message.DeletedAt = DateTime.UtcNow;
+        message.Content = "This message was deleted";
+        
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, messageId = messageId });
     }
 }

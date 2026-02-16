@@ -17,6 +17,13 @@ public class Message
     
     public DateTime? ReadAt { get; set; }
     
+    public bool IsDeleted { get; set; } = false;
+    
+    public DateTime? DeletedAt { get; set; }
+    
+    // Reply support
+    public int? ReplyToMessageId { get; set; }
+    
     // Foreign keys
     [Required]
     public int SenderId { get; set; }
@@ -37,6 +44,9 @@ public class Message
     
     [ForeignKey("GroupId")]
     public virtual Group? Group { get; set; }
+    
+    [ForeignKey("ReplyToMessageId")]
+    public virtual Message? ReplyToMessage { get; set; }
     
     public virtual ICollection<MessageMedia> MessageMedia { get; set; } = new List<MessageMedia>();
 }

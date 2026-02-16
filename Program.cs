@@ -11,6 +11,8 @@ using chat_dotnet.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+// Add MVC with Razor Views support
+builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
 
 // Configure PostgreSQL with Entity Framework
@@ -186,12 +188,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable static files for wwwroot (CSS, JS, images)
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map MVC default route for Razor views
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Map API controllers
 app.MapControllers();

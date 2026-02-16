@@ -8,10 +8,21 @@ public class MessageDto
     public string SenderName { get; set; } = string.Empty;
     public DateTime SentAt { get; set; }
     public bool IsRead { get; set; }
+    public bool IsDeleted { get; set; }
     public int? ConversationId { get; set; }
     public int? GroupId { get; set; }
     public MessageType MessageType { get; set; }
     public List<MediaDto> Media { get; set; } = new();
+    public int? ReplyToMessageId { get; set; }
+    public ReplyMessageDto? ReplyToMessage { get; set; }
+}
+
+public class ReplyMessageDto
+{
+    public int Id { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public int SenderId { get; set; }
+    public string SenderName { get; set; } = string.Empty;
 }
 
 public class SendMessageDto

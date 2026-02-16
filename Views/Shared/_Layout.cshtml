@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ChatApp</title>
+    
+    <!-- Tailwind CSS CDN for quick setup -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // WhatsApp-inspired color palette
+                        'wa-green': '#25D366',
+                        'wa-green-dark': '#128C7E',
+                        'wa-green-light': '#DCF8C6',
+                        'wa-blue': '#34B7F1',
+                        'wa-gray': '#F0F2F5',
+                        'wa-gray-dark': '#E9EDEF',
+                        'wa-chat-bg': '#EFEAE2',
+                        'wa-dark-bg': '#111B21',
+                        'wa-dark-panel': '#202C33',
+                        'wa-dark-hover': '#2A3942',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="~/css/site.css" />
+    
+    <style>
+        /* Custom scrollbar for chat - WebKit browsers */
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .chat-scroll {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: thin;  /* Firefox */
+            scrollbar-color: #888 transparent;
+        }
+
+        /* Smooth animations */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+
+        /* Message bubble animations */
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-bubble {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Typing indicator animation */
+        @@keyframes typingDot {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .typing-dot {
+            animation: typingDot 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+    </style>
+</head>
+<body class="bg-wa-gray min-h-screen">
+    @RenderBody()
+    
+    <!-- SignalR Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

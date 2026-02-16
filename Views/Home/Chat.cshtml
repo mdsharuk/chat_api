@@ -1,0 +1,351 @@
+@{
+    ViewData["Title"] = "Chat";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>@ViewData["Title"] - ChatApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wa-green': '#25D366',
+                        'wa-green-dark': '#128C7E',
+                        'wa-green-light': '#DCF8C6',
+                        'wa-blue': '#34B7F1',
+                        'wa-gray': '#F0F2F5',
+                        'wa-gray-dark': '#E9EDEF',
+                        'wa-chat-bg': '#EFEAE2',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom scrollbar */
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Chat background pattern (WhatsApp-like) */
+        .chat-background {
+            background-color: #EFEAE2;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,.1) 35px, rgba(255,255,255,.1) 70px);
+        }
+
+        /* Message bubble animations */
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-bubble {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Typing indicator */
+        @@keyframes typingDot {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .typing-dot {
+            animation: typingDot 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        /* Ensure safe area for mobile notches */
+        @@supports (padding: max(0px)) {
+            body {
+                padding-left: max(0px, env(safe-area-inset-left));
+                padding-right: max(0px, env(safe-area-inset-right));
+            }
+        }
+
+        /* Mobile responsive adjustments */
+        @@media (max-width: 768px) {
+            body {
+                overflow: hidden;
+            }
+            .mobile-hidden-sidebar {
+                display: none !important;
+            }
+            .mobile-show-sidebar {
+                display: block !important;
+            }
+            /* Desktop - ensure proper layout */
+            #chatArea.mobile-active {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 50;
+                display: flex !important;
+                flex-direction: column;
+            }
+            #sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 40;
+                width: 100% !important;
+            }
+            #welcomeScreen {
+                display: none !important;
+            }
+            /* Make message input area more compact on mobile */
+            #messageInput {
+                font-size: 16px; /* Prevents zoom on focus in iOS */
+            }
+            /* Hide welcome screen on mobile */
+            #chatArea:not(.mobile-active) {
+                display: none !important;
+            }
+            /* Ensure chat container fills and scrolls properly */
+            #chatContainer {
+                height: 100%;
+                max-height: 100vh;
+            }
+        }
+        
+        /* Desktop - ensure proper layout */
+        @@media (min-width: 769px) {
+            #chatArea {
+                display: flex !important;
+                height: 100vh;
+                max-height: 100vh;
+            }
+            #chatContainer {
+                height: 100%;
+            }
+        }
+        
+        /* Ensure proper flex behavior */
+        #messagesArea {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+        }
+        
+        /* Ensure images don't break layout */
+        #messagesArea img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Fix message container to not overflow */
+        .message-bubble {
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="bg-wa-gray h-screen overflow-hidden">
+    <!-- Main Container -->
+    <div class="flex h-screen max-h-screen overflow-hidden">
+        <!-- Sidebar - Conversations List -->
+        <div id="sidebar" class="w-full md:w-96 bg-white border-r border-gray-200 flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="bg-wa-gray-dark px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <div class="w-10 h-10 rounded-full bg-wa-green flex items-center justify-center text-white font-semibold cursor-pointer hover:bg-wa-green-dark transition" id="userAvatar">
+                            <span id="userInitials"></span>
+                        </div>
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <div>
+                        <h2 class="font-semibold text-gray-800" id="currentUserName"></h2>
+                        <p class="text-xs text-gray-500">Online</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-600 hover:text-gray-800 transition" title="New Chat">
+                        <i class="fas fa-message-plus text-lg"></i>
+                    </button>
+                    <button class="text-gray-600 hover:text-gray-800 transition" id="logoutBtn" title="Logout">
+                        <i class="fas fa-sign-out-alt text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="px-4 py-3 bg-white border-b">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        placeholder="Search or start new chat" 
+                        class="w-full pl-10 pr-4 py-2 bg-wa-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-wa-green"
+                    />
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- All Users Tab -->
+            <div class="flex border-b bg-white">
+                <button id="conversationsTab" class="flex-1 py-3 text-sm font-semibold text-wa-green border-b-2 border-wa-green">
+                    Conversations
+                </button>
+                <button id="allUsersTab" class="flex-1 py-3 text-sm font-semibold text-gray-500 hover:text-gray-700 transition">
+                    All Users
+                </button>
+            </div>
+
+            <!-- Conversations List -->
+            <div id="conversationsList" class="flex-1 overflow-y-auto chat-scroll">
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-comments text-4xl mb-2"></i>
+                    <p>No conversations yet</p>
+                    <p class="text-sm">Start chatting with someone!</p>
+                </div>
+            </div>
+
+            <!-- All Users List (hidden by default) -->
+            <div id="allUsersList" class="flex-1 overflow-y-auto chat-scroll hidden">
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                    <p>Loading users...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chatArea" class="flex-1 flex flex-col bg-wa-chat-bg chat-background hidden md:flex">
+            <!-- Welcome Screen (shown when no chat is selected) -->
+            <div id="welcomeScreen" class="flex-1 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="inline-block bg-white rounded-full p-8 shadow-lg mb-4">
+                        <i class="fas fa-comments text-wa-green text-6xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-2">ChatApp for Web</h2>
+                    <p class="text-gray-500 max-w-md">
+                        Send and receive messages instantly. <br />
+                        Select a chat to start messaging.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Chat Container (hidden initially) -->
+            <div id="chatContainer" class="flex-1 flex flex-col hidden">
+                <!-- Chat Header -->
+                <div class="bg-wa-gray-dark px-4 py-3 flex items-center justify-between border-b">
+                    <div class="flex items-center space-x-3">
+                        <button id="backBtn" class="md:hidden text-gray-700 hover:text-gray-900 mr-2">
+                            <i class="fas fa-arrow-left text-lg"></i>
+                        </button>
+                        <div class="relative">
+                            <div id="chatUserAvatar" class="w-10 h-10 rounded-full bg-wa-blue flex items-center justify-center text-white font-semibold">
+                                <span id="chatUserInitials"></span>
+                            </div>
+                            <span id="chatUserOnlineIndicator" class="absolute bottom-0 right-0 w-3 h-3 bg-gray-400 border-2 border-white rounded-full"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800" id="chatUserName"></h3>
+                            <p class="text-xs text-gray-500" id="chatUserStatus">Offline</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="text-gray-600 hover:text-gray-800 transition" title="Search">
+                            <i class="fas fa-search text-lg"></i>
+                        </button>
+                        <button class="text-gray-600 hover:text-gray-800 transition" title="More">
+                            <i class="fas fa-ellipsis-v text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Area -->
+                <div id="messagesArea" class="flex-1 overflow-y-auto chat-scroll px-4 py-4">
+                    <!-- Messages will be dynamically inserted here -->
+                </div>
+
+                <!-- Typing Indicator -->
+                <div id="typingIndicator" class="px-4 pb-2 hidden">
+                    <div class="flex items-center space-x-2 text-gray-500 text-sm">
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                        </div>
+                        <span id="typingUserName"></span>
+                    </div>
+                </div>
+
+                <!-- Message Input Area -->
+                <div class="bg-wa-gray-dark px-4 py-3 flex items-center space-x-3">
+                    <!-- Hidden file input -->
+                    <input 
+                        type="file" 
+                        id="fileInput" 
+                        accept="image/*,video/*" 
+                        class="hidden"
+                    />
+                    <button id="attachBtn" class="text-gray-600 hover:text-gray-800 transition" title="Attach Image/Video">
+                        <i class="fas fa-paperclip text-xl"></i>
+                    </button>
+                    <div class="flex-1 flex items-center bg-white rounded-lg px-4 py-2">
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            placeholder="Type a message" 
+                            class="flex-1 outline-none"
+                            autocomplete="off"
+                        />
+                        <button class="text-gray-600 hover:text-gray-800 transition ml-2" title="Emoji">
+                            <i class="far fa-smile text-xl"></i>
+                        </button>
+                    </div>
+                    <button id="sendBtn" class="bg-wa-green hover:bg-wa-green-dark text-white rounded-full w-10 h-10 flex items-center justify-center transition transform hover:scale-110 active:scale-95" title="Send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SignalR Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@8.0.0/dist/browser/signalr.min.js"></script>
+    
+    <!-- Main Application Script -->
+    <script src="~/js/chat.js"></script>
+    
+    <!-- Message Actions Script -->
+    <script src="~/js/message-actions.js"></script>
+</body>
+</html>

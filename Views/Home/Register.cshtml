@@ -1,0 +1,293 @@
+@{
+    ViewData["Title"] = "Register";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ChatApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wa-green': '#25D366',
+                        'wa-green-dark': '#128C7E',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-wa-green-dark to-wa-green min-h-screen flex items-center justify-center p-4">
+    <!-- Register Container -->
+    <div class="w-full max-w-md">
+        <!-- Logo/Brand Section -->
+        <div class="text-center mb-8">
+            <div class="inline-block bg-white rounded-full p-6 shadow-lg mb-4">
+                <i class="fas fa-comments text-wa-green text-5xl"></i>
+            </div>
+            <h1 class="text-white text-4xl font-bold mb-2">ChatApp</h1>
+            <p class="text-white text-opacity-90">Create your account</p>
+        </div>
+
+        <!-- Register Form Card -->
+        <div class="bg-white rounded-lg shadow-2xl p-8 max-h-[85vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Join Us Today</h2>
+            
+            <!-- Error Message Display -->
+            <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                <span class="block sm:inline" id="errorText"></span>
+            </div>
+
+            <!-- Success Message Display -->
+            <div id="successMessage" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4" role="alert">
+                <span class="block sm:inline" id="successText"></span>
+            </div>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="space-y-4">
+                <!-- Full Name Input -->
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user-circle mr-2"></i>Full Name
+                    </label>
+                    <input 
+                        type="text" 
+                        id="fullName" 
+                        name="fullName" 
+                        required 
+                        maxlength="50"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wa-green focus:border-transparent transition duration-200"
+                        placeholder="Enter your full name"
+                    />
+                </div>
+
+                <!-- Email Input -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope mr-2"></i>Email
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        required 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wa-green focus:border-transparent transition duration-200"
+                        placeholder="Enter your email"
+                    />
+                </div>
+
+                <!-- Username Input -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2"></i>Username
+                    </label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required 
+                        minlength="3"
+                        maxlength="20"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wa-green focus:border-transparent transition duration-200"
+                        placeholder="Choose a username"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">3-20 characters</p>
+                </div>
+
+                <!-- Password Input -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required 
+                            minlength="6"
+                            maxlength="100"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wa-green focus:border-transparent transition duration-200"
+                            placeholder="Create a password"
+                        />
+                        <button 
+                            type="button" 
+                            id="togglePassword" 
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                </div>
+
+                <!-- Confirm Password Input -->
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Confirm Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            name="confirmPassword" 
+                            required 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wa-green focus:border-transparent transition duration-200"
+                            placeholder="Confirm your password"
+                        />
+                        <button 
+                            type="button" 
+                            id="toggleConfirmPassword" 
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="registerButton"
+                    class="w-full bg-wa-green hover:bg-wa-green-dark text-white font-semibold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105 active:scale-95 shadow-md"
+                >
+                    <span id="registerButtonText">
+                        <i class="fas fa-user-plus mr-2"></i>Create Account
+                    </span>
+                    <span id="registerButtonLoading" class="hidden">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Creating account...
+                    </span>
+                </button>
+            </form>
+
+            <!-- Login Link -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">
+                    Already have an account? 
+                    <a href="@Url.Action("Login", "Home")" class="text-wa-green hover:text-wa-green-dark font-semibold transition duration-200">
+                        Login here
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-6 text-white text-opacity-75 text-sm">
+            <p>&copy; 2026 ChatApp. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility functions
+        function setupPasswordToggle(inputId, buttonId) {
+            document.getElementById(buttonId).addEventListener('click', function() {
+                const passwordInput = document.getElementById(inputId);
+                const icon = this.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+
+        setupPasswordToggle('password', 'togglePassword');
+        setupPasswordToggle('confirmPassword', 'toggleConfirmPassword');
+
+        // Handle register form submission
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            const registerButton = document.getElementById('registerButton');
+            const registerButtonText = document.getElementById('registerButtonText');
+            const registerButtonLoading = document.getElementById('registerButtonLoading');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const successMessage = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+
+            // Hide messages
+            errorMessage.classList.add('hidden');
+            successMessage.classList.add('hidden');
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                errorText.textContent = 'Passwords do not match';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // Show loading state
+            registerButton.disabled = true;
+            registerButtonText.classList.add('hidden');
+            registerButtonLoading.classList.remove('hidden');
+
+            try {
+                // Call register API
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fullName: fullName,
+                        email: email,
+                        username: username,
+                        password: password,
+                        confirmPassword: confirmPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Show success message
+                    successText.textContent = 'Account created successfully! Redirecting to login...';
+                    successMessage.classList.remove('hidden');
+                    
+                    // Redirect to login page after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/Home/Login';
+                    }, 2000);
+                } else {
+                    // Show error message
+                    const errorMsg = data.message || data.errors?.join(', ') || 'Registration failed. Please try again.';
+                    errorText.textContent = errorMsg;
+                    errorMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorText.textContent = 'An error occurred. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                // Reset button state
+                registerButton.disabled = false;
+                registerButtonText.classList.remove('hidden');
+                registerButtonLoading.classList.add('hidden');
+            }
+        });
+
+        // Check if already logged in
+        if (localStorage.getItem('token')) {
+            window.location.href = '/Home/Chat';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "Error";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error - ChatApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wa-green': '#25D366',
+                        'wa-green-dark': '#128C7E',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full text-center">
+        <div class="bg-white rounded-lg shadow-2xl p-8">
+            <div class="mb-6">
+                <i class="fas fa-exclamation-triangle text-red-500 text-6xl mb-4"></i>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Oops!</h1>
+                <h2 class="text-xl text-gray-600 mb-4">Something went wrong</h2>
+            </div>
+            
+            <p class="text-gray-500 mb-6">
+                We're sorry, but something unexpected happened. Please try again or contact support if the problem persists.
+            </p>
+            
+            <div class="space-y-3">
+                <a href="@Url.Action("Index", "Home")" 
+                   class="block w-full bg-wa-green hover:bg-wa-green-dark text-white font-semibold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105">
+                    <i class="fas fa-home mr-2"></i>Go Home
+                </a>
+                <button onclick="window.history.back()" 
+                        class="block w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105">
+                    <i class="fas fa-arrow-left mr-2"></i>Go Back
+                </button>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-gray-600 text-sm">
+            <p>&copy; 2026 ChatApp. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
